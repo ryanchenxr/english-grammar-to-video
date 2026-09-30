@@ -10,7 +10,9 @@ English Grammar to Video 是一款英语语法视频创作 Skill，帮你把抽�
 
 男声小课案例：《There is / There are》——通过桌上的书包和书本，讲清楚什么时候用 is，什么时候用 are。
 
-[▶ 观看男声小课](media/there-is-are-male-demo-no-writing-sfx.mp4)
+https://github.com/user-attachments/assets/f823cdec-967f-4d33-81cb-6b999028619f
+
+[下载示例视频](media/there-is-are-male-demo-no-writing-sfx.mp4)
 
 | 情境简图 | 重点圈注 | 结尾总览 |
 | --- | --- | --- |
