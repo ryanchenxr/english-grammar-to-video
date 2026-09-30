@@ -22,9 +22,15 @@ https://github.com/user-attachments/assets/f823cdec-967f-4d33-81cb-6b999028619f
 
 ## 怎么安装
 
-这是在**本地运行**的 Skill。安装时保留仓库内 `SKILL.md`、`grammar_video.py`、`runtime/`、`assets/`、`references/` 的相对位置。把下面对应的一段复制给你的 Agent；安装后它会检查并完成首次环境准备，再告诉你是否可以开始制作。其他 Agent 同样需要文件读写、命令执行与必要的联网能力；列出安装提示不表示本项目已在这些宿主完成集成验证。
+这是在**本地运行**的 Skill。安装时保留仓库内 `SKILL.md`、`grammar_video.py`、`runtime/`、`assets/`、`references/` 的相对位置。把下面一句话复制给你的 Agent；安装后它会检查并完成首次环境准备，再告诉你是否可以开始制作。其他 Agent 同样需要文件读写、命令执行与必要的联网能力；列出安装提示不表示本项目已在这些宿主完成集成验证。
 
-首次准备会下载约 2.52 GB 的 Qwen3-TTS 0.6B Base 模型及相关依赖；已有匹配的缓存会复用。下列提示已要求 Agent 完成这些准备，遇到权限或真实阻塞时再说明必要操作。
+```text
+请帮我安装这个 Skill：https://github.com/ryanchenxr/english-grammar-to-video
+```
+
+首次安装默认包含必要依赖及约 2.52 GB 的 Qwen3-TTS 0.6B Base 模型准备，已有兼容环境和匹配缓存会复用。若你只想下载文件、检查环境或暂不下载模型，请明确说明。必要的系统及宿主权限会正常请求；安装完成后再提出课程需求。上述入口不表示所有宿主均已实测。
+
+也可使用下面对应宿主的详细提示作为备用方式：
 
 **Codex** · [官方 Skills 说明](https://learn.chatgpt.com/docs/build-skills)
 

@@ -10,7 +10,9 @@
 
 ## 第一次准备
 
-明确要求安装并完成环境准备时，先选择或复用安装目录之外的独立工作区，记录其完整绝对路径；下面三步及后续任务始终使用该路径。`/path/to/grammar-work` 由 Agent 换成实际路径，不交给用户猜测或拼接命令。
+用户请求安装本 Skill 时，默认完成技能安装及首次运行所需的环境准备，直到可以开始制作。先检查并复用已有环境，再补齐必要依赖和匹配的 Base 模型，最后复查。若用户明确只下载文件、只检查环境或暂不下载模型，则遵从其限制。必要的系统及宿主权限正常请求，不绕过权限。安装任务不自动生成课程。
+
+先选择或复用安装目录之外的独立工作区，记录其完整绝对路径；下面三步及后续任务始终使用该路径。`/path/to/grammar-work` 由 Agent 换成实际路径，不交给用户猜测或拼接命令。
 
 在本 Skill 目录运行：
 
@@ -20,7 +22,7 @@ python3 grammar_video.py --workspace /path/to/grammar-work prepare --voice-route
 python3 grammar_video.py --workspace /path/to/grammar-work doctor
 ```
 
-`doctor` 输出 `needs-preparation` 表示安装尚未结束。正常缺项应继续处理：先按已有权限补齐 Node.js/npm、FFmpeg、Python 3.12 或 uv 等系统条件，再执行上述固定参考 Base 路线的 `prepare`，最后再次 `doctor`。`prepare` 的 `prepared` 状态也不能代替复查；只有复查为 `ready` 且另行确认 Chrome/Chromium 可执行文件可用时，才报告可以开始制作。doctor 当前不检查浏览器，须由 Agent 检查默认位置或 `GRAMMAR_BROWSER_EXECUTABLE`。
+未受用户限制时，`doctor` 输出 `needs-preparation` 表示安装尚未结束；若用户限制安装或模型下载，遵从限制并报告仍未准备的部分。正常缺项应继续处理：先按已有权限补齐 Node.js/npm、FFmpeg、Python 3.12 或 uv 等系统条件，再执行上述固定参考 Base 路线的 `prepare`，最后再次 `doctor`。`prepare` 的 `prepared` 状态也不能代替复查；只有复查为 `ready` 且另行确认 Chrome/Chromium 可执行文件可用时，才报告可以开始制作。doctor 当前不检查浏览器，须由 Agent 检查默认位置或 `GRAMMAR_BROWSER_EXECUTABLE`。
 
 若复查仍有缺项，定位并修复可处理的原因；遇到系统权限、宿主授权、下载失败或不支持的平台等真实阻塞时，报告未完成原因和最少必要操作，不绕过权限或要求关闭安全保护。不要将普通缺项报告当作安装完成。用户仅要求检查环境时只运行 doctor，不执行安装或下载。安装准备不生成完整课程，也不调整声音、字体或教学模板。
 
