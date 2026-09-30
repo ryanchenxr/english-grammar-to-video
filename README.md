@@ -22,18 +22,24 @@ https://github.com/user-attachments/assets/f823cdec-967f-4d33-81cb-6b999028619f
 
 ## 怎么安装
 
-这是在**本地运行**的 Skill。安装时保留仓库内 `SKILL.md`、`grammar_video.py`、`runtime/`、`assets/`、`references/` 的相对位置。把下面对应的一段复制给你的 Agent；安装后它会检查环境并告诉你还需准备什么。其他 Agent 同样需要文件读写、命令执行与必要的联网能力；列出安装提示不表示本项目已在这些宿主完成集成验证。
+这是在**本地运行**的 Skill。安装时保留仓库内 `SKILL.md`、`grammar_video.py`、`runtime/`、`assets/`、`references/` 的相对位置。把下面对应的一段复制给你的 Agent；安装后它会检查并完成首次环境准备，再告诉你是否可以开始制作。其他 Agent 同样需要文件读写、命令执行与必要的联网能力；列出安装提示不表示本项目已在这些宿主完成集成验证。
+
+首次准备会下载约 2.52 GB 的 Qwen3-TTS 0.6B Base 模型及相关依赖；已有匹配的缓存会复用。下列提示已要求 Agent 完成这些准备，遇到权限或真实阻塞时再说明必要操作。
 
 **Codex** · [官方 Skills 说明](https://learn.chatgpt.com/docs/build-skills)
 
 ```text
-请用 $skill-installer 从 https://github.com/ryanchenxr/english-grammar-to-video 的仓库根目录安装 English Grammar to Video Skill，保留完整目录结构。安装后读取 SKILL.md，运行 doctor；请说明本机还缺什么，再按仓库说明准备依赖与本地配音模型。
+请用 $skill-installer 从 https://github.com/ryanchenxr/english-grammar-to-video 的仓库根目录安装 English Grammar to Video Skill，保留完整目录结构。
+
+读取 SKILL.md 和 references/setup-and-cli.md，选择或复用安装目录之外的独立制作工作区，记录其完整路径并始终使用同一路径。运行 doctor；若为 needs-preparation，按说明自主补齐必要系统依赖，执行 prepare --voice-route fixed-reference --model-source modelscope --download-model，安装隔离依赖并下载匹配的 Qwen3-TTS 0.6B Base，复用已有兼容依赖和模型。再次运行 doctor，确认 ready 并检查渲染浏览器可用后，报告是否可以开始制作，不停在报告缺项。遇到系统权限、宿主授权或真实阻塞时说明原因，只给最少必要操作，不绕过权限、不关闭安全保护、不让用户拼接命令或猜路径。本次只完成安装准备，不生成课程。
 ```
 
 **Claude Code** · [官方 Skills 说明](https://code.claude.com/docs/en/skills)
 
 ```text
-请把 https://github.com/ryanchenxr/english-grammar-to-video 的完整仓库安装为我的 Claude Code 本地个人 Skill，名称为 english-grammar-to-video，确保 SKILL.md 在该 Skill 目录根部。读取仓库说明，运行 doctor，并协助准备缺少的依赖与本地配音模型。
+请把 https://github.com/ryanchenxr/english-grammar-to-video 的完整仓库安装为我的 Claude Code 本地个人 Skill，名称为 english-grammar-to-video，确保 SKILL.md 在该 Skill 目录根部。
+
+读取 SKILL.md 和 references/setup-and-cli.md，选择或复用安装目录之外的独立制作工作区，记录其完整路径并始终使用同一路径。运行 doctor；若为 needs-preparation，按说明自主补齐必要系统依赖，执行 prepare --voice-route fixed-reference --model-source modelscope --download-model，安装隔离依赖并下载匹配的 Qwen3-TTS 0.6B Base，复用已有兼容依赖和模型。再次运行 doctor，确认 ready 并检查渲染浏览器可用后，报告是否可以开始制作，不停在报告缺项。遇到系统权限、宿主授权或真实阻塞时说明原因，只给最少必要操作，不绕过权限、不关闭安全保护、不让用户拼接命令或猜路径。本次只完成安装准备，不生成课程。
 ```
 
 Claude Code 是能访问本机文件和终端的编程工具；普通 Claude 网页聊天不能照此运行本地视频制作命令。
@@ -41,13 +47,17 @@ Claude Code 是能访问本机文件和终端的编程工具；普通 Claude 网
 **WorkBuddy** · [官方技能安装说明](https://cloud.tencent.com/document/product/1831/134432)
 
 ```text
-请从 https://github.com/ryanchenxr/english-grammar-to-video 获取完整的 English Grammar to Video Skill，并按 WorkBuddy 的“上传技能／导入本地技能包”方式安装。保留 SKILL.md、程序与资源的相对位置；若导入需要我手动点击，请准备好技能包并告诉我入口。安装后运行 doctor，说明环境缺项。
+请从 https://github.com/ryanchenxr/english-grammar-to-video 获取完整的 English Grammar to Video Skill，并按 WorkBuddy 的“上传技能／导入本地技能包”方式安装。保留 SKILL.md、程序与资源的相对位置；若导入需要我手动点击，请准备好技能包并告诉我入口。
+
+读取 SKILL.md 和 references/setup-and-cli.md，选择或复用安装目录之外的独立制作工作区，记录其完整路径并始终使用同一路径。运行 doctor；若为 needs-preparation，按说明自主补齐必要系统依赖，执行 prepare --voice-route fixed-reference --model-source modelscope --download-model，安装隔离依赖并下载匹配的 Qwen3-TTS 0.6B Base，复用已有兼容依赖和模型。再次运行 doctor，确认 ready 并检查渲染浏览器可用后，报告是否可以开始制作，不停在报告缺项。遇到系统权限、宿主授权或真实阻塞时说明原因，只给最少必要操作，不绕过权限、不关闭安全保护、不让用户拼接命令或猜路径。本次只完成安装准备，不生成课程。
 ```
 
 **DeepSeek Harness** · [官方介绍](https://www.deepseek.com/harness/)
 
 ```text
-请先确认你当前 DeepSeek Harness 使用的本地 Skill 机制和安装位置，再从 https://github.com/ryanchenxr/english-grammar-to-video 读取并安装完整的 English Grammar to Video Skill。保留 SKILL.md 与程序资源的相对位置；若当前 Harness 无法安装或运行本地 Skill，请说明限制，不猜测目录。安装后运行 doctor 并报告环境状态。
+请先确认你当前 DeepSeek Harness 使用的本地 Skill 机制和安装位置，再从 https://github.com/ryanchenxr/english-grammar-to-video 读取并安装完整的 English Grammar to Video Skill。保留 SKILL.md 与程序资源的相对位置；若当前 Harness 无法安装或运行本地 Skill，请说明限制，不猜测目录。
+
+读取 SKILL.md 和 references/setup-and-cli.md，选择或复用安装目录之外的独立制作工作区，记录其完整路径并始终使用同一路径。运行 doctor；若为 needs-preparation，按说明自主补齐必要系统依赖，执行 prepare --voice-route fixed-reference --model-source modelscope --download-model，安装隔离依赖并下载匹配的 Qwen3-TTS 0.6B Base，复用已有兼容依赖和模型。再次运行 doctor，确认 ready 并检查渲染浏览器可用后，报告是否可以开始制作，不停在报告缺项。遇到系统权限、宿主授权或真实阻塞时说明原因，只给最少必要操作，不绕过权限、不关闭安全保护、不让用户拼接命令或猜路径。本次只完成安装准备，不生成课程。
 ```
 
 ## 怎么开始

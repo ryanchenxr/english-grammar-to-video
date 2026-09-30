@@ -10,13 +10,21 @@
 
 ## 第一次准备
 
-在本 Skill 目录运行，先检查缺项：
+明确要求安装并完成环境准备时，先选择或复用安装目录之外的独立工作区，记录其完整绝对路径；下面三步及后续任务始终使用该路径。`/path/to/grammar-work` 由 Agent 换成实际路径，不交给用户猜测或拼接命令。
+
+在本 Skill 目录运行：
 
 ```sh
 python3 grammar_video.py --workspace /path/to/grammar-work doctor
 python3 grammar_video.py --workspace /path/to/grammar-work prepare --voice-route fixed-reference --model-source modelscope --download-model
 python3 grammar_video.py --workspace /path/to/grammar-work doctor
 ```
+
+`doctor` 输出 `needs-preparation` 表示安装尚未结束。正常缺项应继续处理：先按已有权限补齐 Node.js/npm、FFmpeg、Python 3.12 或 uv 等系统条件，再执行上述固定参考 Base 路线的 `prepare`，最后再次 `doctor`。`prepare` 的 `prepared` 状态也不能代替复查；只有复查为 `ready` 且另行确认 Chrome/Chromium 可执行文件可用时，才报告可以开始制作。doctor 当前不检查浏览器，须由 Agent 检查默认位置或 `GRAMMAR_BROWSER_EXECUTABLE`。
+
+若复查仍有缺项，定位并修复可处理的原因；遇到系统权限、宿主授权、下载失败或不支持的平台等真实阻塞时，报告未完成原因和最少必要操作，不绕过权限或要求关闭安全保护。不要将普通缺项报告当作安装完成。用户仅要求检查环境时只运行 doctor，不执行安装或下载。安装准备不生成完整课程，也不调整声音、字体或教学模板。
+
+已有兼容环境和匹配模型应复用；doctor 已为 ready 且固定参考配置匹配时，无须重复 prepare。prepare 会复用已有隔离 Python、相同内容的 runtime 和 Node 依赖，并由模型下载器复用用户级缓存；Python 依赖仍会执行安装兼容性检查，不清空环境或缓存。
 
 如果只有 `uv`，没有可直接使用的 `python3`，可在同一目录用 `uv run --no-project --python 3.12 python grammar_video.py --workspace /path/to/grammar-work doctor` 启动脚本；把末尾的 `doctor` 换成上面的 `prepare ...` 即可准备环境。准备完成后，程序内部使用工作区 `.grammar-env` 的 Python 3.12。
 
