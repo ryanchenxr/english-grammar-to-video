@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "teaching-male-synthetic-intro-v1",
+  "route": "base-clone",
+  "modelId": "Qwen/Qwen3-TTS-12Hz-0.6B-Base",
+  "modelSource": "modelscope",
+  "modelDigest": "5d77885ef7076f5d1c1cc31db40447df69b0ed1f6fba13b7adeb3283561ba810",
+  "modelWeightsSha256": "180b3b10eb1c9f1b4db7806d5475bae3071c0243c299d49926bab1da3b6946f6",
+  "referenceMode": "speaker-embedding-only",
+  "referenceText": null,
+  "temperature": 0.85,
+  "maxTokens": 900,
+  "seed": 620242,
+  "gender": "male",
+  "reference": {
+    "path": "library/voices/profiles/teaching-male-synthetic-intro-v1/reference.wav",
+    "sha256": "eacae4b2c8b3a88df795dbe1b432c4339c1d344a8797b02c6095f9a5b25a1202",
+    "bytes": 468526
+  },
+  "source": "经 Ryan 授权、基于本人声音合成的项目介绍",
+  "provenance": {
+    "method": "Qwen3-TTS 0.6B Base synthetic project introduction from Ryan-authorized private voice; not a new human recording",
+    "introductionText": "你好，我是 English Grammar to Video 的作者陈虾仁。希望你能用它，创作出你喜欢的英语语法视频小课哦。",
+    "auditionRunId": "male-synthetic-intro-audition-20260929-01",
+    "distributionAuthorization": "Ryan authorized this new synthetic introduction audio for Skill distribution and user-generated voiceovers"
+  },
+  "acceptance": "Ryan voice PASS for teaching-male-synthetic-intro-v1; male full lesson, other platforms and hosts unverified",
+  "voiceAcceptedBy": "Ryan",
+  "voiceAcceptedAt": "2026-09-29T15:16:22.286126Z",
+  "approvedAuditionRunId": "male-synthetic-intro-audition-20260929-01"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "english-grammar-to-video-template",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "studio": "remotion studio src/index.tsx",
+    "typecheck": "tsc --noEmit",
+    "validate:sample": "node scripts/validate.mjs ../examples/flowers-preview.json",
+    "validate:legacy": "node scripts/validate.mjs ../examples/mini-lesson.json"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.529",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.529",
+    "svg-path-properties": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.31",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "format": "writing-board-v5",
+  "title": "正在发生的动作",
+  "audience": "中文学习者",
+  "scope": "只说明此刻正在发生的动作，不扩展到将来安排。",
+  "boardWidth": 2200,
+  "boardHeight": 1300,
+  "sections": ["example", "rule"],
+  "cues": [
+    {"id": "question", "section": "example", "lang": "zh", "text": "看这句，动作正在发生。"},
+    {"id": "sentence", "section": "example", "lang": "en", "text": "She is reading a book."},
+    {"id": "explain", "section": "rule", "lang": "zh", "text": "这里的 is reading，表示她此刻正在读。"}
+  ],
+  "writes": [
+    {"id": "heading", "section": "example", "text": "Right now", "x": 190, "y": 170, "size": 90, "color": "ink", "anchor": "question", "offset": 0.2, "duration": 1.0},
+    {"id": "example", "section": "example", "text": "She is reading a book.", "x": 190, "y": 360, "size": 100, "color": "ink", "anchor": "sentence", "offset": 0.1, "duration": 1.7, "notBeforeCue": "sentence"},
+    {"id": "rule", "section": "rule", "text": "is + reading", "x": 190, "y": 590, "size": 84, "color": "blue", "anchor": "explain", "offset": 1.3, "duration": 1.2},
+    {"id": "time-hint", "section": "rule", "text": "正在读", "x": 1180, "y": 590, "size": 68, "color": "orange", "anchor": "explain", "offset": 1.3, "duration": 0.8}
+  ],
+  "marks": [
+    {"id": "mark-is", "section": "example", "kind": "circle", "color": "orange", "targetId": "example", "target": "is", "occurrence": 0, "anchor": "explain", "offset": 0.3, "duration": 0.6}
+  ],
+  "annotationIntents": [
+    {"markId": "mark-is", "cueId": "explain", "targetId": "example", "target": "is", "occurrence": 0}
+  ],
+  "sketches": [
+    {"id": "open-book", "section": "example", "d": "M 1400 300 Q 1490 285 1580 320 L 1580 445 Q 1490 410 1400 425 Z M 1580 320 Q 1670 285 1760 300 L 1760 425 Q 1670 410 1580 445", "color": "blue", "width": 6, "anchor": "question", "offset": 0.3, "duration": 0.7}
+  ],
+  "camera": [
+    {"id": "example-shot", "section": "example", "x": 950, "y": 470, "zoom": 1, "duration": 0},
+    {"id": "overview", "anchor": "explain", "offset": 2.5, "x": 1050, "y": 585, "zoom": 0.72, "duration": 1}
+  ],
+  "sound": {"enabled": false, "volume": 0}
+}

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "route": "base-clone",
+  "modelId": "Qwen/Qwen3-TTS-12Hz-0.6B-Base",
+  "modelSource": "modelscope",
+  "modelDigest": "5d77885ef7076f5d1c1cc31db40447df69b0ed1f6fba13b7adeb3283561ba810",
+  "modelWeightsSha256": "180b3b10eb1c9f1b4db7806d5475bae3071c0243c299d49926bab1da3b6946f6",
+  "referenceMode": "speaker-embedding-only",
+  "referenceText": null,
+  "temperature": 0.85,
+  "maxTokens": 900,
+  "seed": 620242,
+  "approvedAuditionRunId": "fixed-reference-audition-20260929-01",
+  "gender": "female",
+  "source": "local Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+  "id": "teaching-female-fixed-v1",
+  "reference": {
+    "path": "library/voices/profiles/teaching-female-fixed-v1/reference.wav",
+    "sha256": "456b4ea7d1a6d6b17b9fb5bc00352ec06504ae2e49d5a1655e10e2844e059307",
+    "bytes": 424364
+  },
+  "acceptance": "Ryan fixed-reference voice audition PASS; female complete lesson PASS; other courses and platforms unverified",
+  "provenance": {
+    "type": "local-voice-design-reference",
+    "modelId": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+    "modelWeightsSha256": "391e8db219f292c515297cdceeb43e4eae67cdde35fa57e79a6a8a532fca0522",
+    "seed": 620241,
+    "temperature": 0.9,
+    "description": "一位成年女性教师的自然口语声音。标准普通话，音色成熟平实，音高中等，咬字清楚，响度均匀。语速自然，句尾平稳收束，语调有适度而轻微的起伏。像坐在学生旁边解释例句，平等、克制、耐心。英语术语发音清楚，中文英文衔接自然。",
+    "referenceTranscriptVerified": false
+  }
+}

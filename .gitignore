@@ -1,0 +1,44 @@
+# Installed dependencies and local runtimes
+node_modules/
+.grammar-env/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Generated course work and shared caches
+cache/
+library/
+projects/
+work/
+audio/
+exports/
+trash/
+voice sample/
+private/
+
+# Model weights and packaged/test output
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.zip
+*.tar.gz
+*.mp4
+!media/*.mp4
+*.mp3
+*.wav
+!assets/voices/*/reference.wav
+
+# Local settings, credentials, logs and editor noise
+.env
+.env.*
+.npmrc
+*.key
+*.pem
+*.token
+credentials*.json
+*.log
+*.tmp
+.DS_Store
