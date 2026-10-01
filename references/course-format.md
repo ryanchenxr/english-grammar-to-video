@@ -19,7 +19,7 @@
 [
   {"id":"be-he","section":"rule","lang":"zh","text":"he、she、it 用 is。","pauseAfter":0.35},
   {"id":"be-you","section":"rule","lang":"zh","text":"you、we、they 用 are。","pauseAfter":0.35},
-  {"id":"ending","section":"rule","lang":"zh","text":"这里的 ing，按字母读。","spokenText":"这里的 I、N、G，按字母读。","pauseAfter":0.35}
+  {"id":"ending","section":"rule","lang":"zh","text":"动词后面加 ing。","spokenText":"动词后面加 I、N、G。","pauseAfter":0.35}
 ]
 ```
 

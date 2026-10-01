@@ -27,7 +27,7 @@ description: 根据英语语法概念，为中文学习者制作 16:9 有声手�
 
 默认女声为 `teaching-female-fixed-v1`，男声为 `teaching-male-synthetic-intro-v1`。两者使用本地 Qwen3-TTS 0.6B Base 固定参考、`speaker-embedding-only` 模式和各自不可覆盖的[音色配置](references/voice-profile.md)；一次任务只构建一次 clone prompt，供该任务各段复用。男声参考是获授权的合成项目介绍，不是私人原录音。声音素材范围见 [VOICE_ASSETS](VOICE_ASSETS.md)。用户明确提供其他参考时可使用 `init --reference`；更换模型或音色前先用中文、英文及混合句短试听，选定后可在后续课程复用。
 
-独立教学规则拆成完整 cue，例如“I 用 am。”“he、she、it 用 is。”“you、we、they 用 are。”，在规则之间用 `pauseAfter` 留清楚边界，不逐词停顿。总结各要点分别表达。单独解释词尾 ing 的字母构成时，使用逐 cue 的 `spokenText` 明确读作“I、N、G”；完整单词 playing、writing、swimming 正常朗读，板书仍为 ing / V-ing，不全局替换。`text` 为展示与字幕文本，实际朗读记录及缓存使用 `spokenText`（省略则等于 text），两者须保持教学含义一致。只切字幕不会产生录音内部的语义停顿。短 cue 字幕按各自实测音长编译；长句需要语义边界时优先拆句，不按字符比例猜测词级时间，也不把静音检测当作词级对齐。
+独立教学规则拆成完整 cue，例如“I 用 am。”“he、she、it 用 is。”“you、we、they 用 are。”，在规则之间用 `pauseAfter` 留清楚边界，不逐词停顿。总结各要点分别表达。单独解释词尾 ing 的字母构成时，使用逐 cue 的 `spokenText` 明确读作“I、N、G”；完整单词 playing、writing、swimming 正常朗读，板书仍为 ing / V-ing，不全局替换。`text` 为展示与字幕文本，实际朗读记录及缓存使用 `spokenText`（省略则等于 text），两者须保持教学含义一致。读法要求属于制作指令，不应自动把“这里按字母读”等测试或控制话术加入课程旁白；用户明确要讲解字母拼读本身时除外。只切字幕不会产生录音内部的语义停顿。短 cue 字幕按各自实测音长编译；长句需要语义边界时优先拆句，不按字符比例猜测词级时间，也不把静音检测当作词级对齐。
 
 先定自然台词，再生成语音并复核发音，按实际音长编译板书、字幕与镜头。改动一句时只让相关音频缓存失效；字形按字体内容、字符、字号与颜色复用。不得为凑时长加速旁白，也不得把文件或波形检查当作主观听感通过。
 
