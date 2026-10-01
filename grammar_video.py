@@ -334,6 +334,8 @@ def init_project(args):
     for cue in course['cues']:
         if cue.get('lang') not in ('zh', 'en') or not isinstance(cue.get('text'), str) or not cue['text'].strip():
             raise ValueError(f'invalid voice cue: {cue.get("id")}')
+        if 'spokenText' in cue and (not isinstance(cue['spokenText'], str) or not cue['spokenText'].strip()):
+            raise ValueError(f'invalid spokenText: {cue.get("id")}')
     for kind in ('writes', 'marks', 'sketches'):
         for item in course.get(kind, []):
             if item.get('anchor') not in cue_ids:

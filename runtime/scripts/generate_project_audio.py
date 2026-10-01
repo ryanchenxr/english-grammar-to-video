@@ -14,6 +14,7 @@ import numpy as np
 import soundfile as sf
 from huggingface_hub import snapshot_download
 from storage import atomic, iso, now, sha, safe_path
+from course_text import spoken_text
 
 PROCESS_VERSION = 'trim-rms-002-pad-080-normalize-105-085-mp3-128k-v1'
 VOICE_VERSION = 'qwen3-tts-custom-or-base-offline-v1'
@@ -88,6 +89,17 @@ def save_unique(source, folder):
     return content_hash, target
 
 
+def cue_input_data(cue, tts, voice, model_id, model_digest):
+    # Keep legacy keys unchanged when spokenText is absent; hash the actual TTS input.
+    data = {'version': VOICE_VERSION, 'text': spoken_text(cue), 'lang': cue['lang'],
+            'modelId': model_id, 'modelDigest': model_digest, 'voice': voice,
+            'temperature': tts.get('temperature', .85), 'maxTokens': tts.get('maxTokens', 900),
+            'pauseShorten': cue.get('pauseShorten'), 'processing': PROCESS_VERSION}
+    if tts.get('seed') is not None:
+        data['seed'] = tts['seed']
+    return data
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--project', required=True)
@@ -152,17 +164,12 @@ def main():
                       'voiceProfileSha256': sha(profile_path) if profile_path else None})
     resolved = []; missing = []
     for cue in course['cues']:
-        key_data = {'version': VOICE_VERSION, 'text': cue['text'], 'lang': cue['lang'],
-                    'modelId': model_id, 'modelDigest': model_digest, 'voice': voice,
-                    'temperature': tts.get('temperature', .85), 'maxTokens': tts.get('maxTokens', 900),
-                    'pauseShorten': cue.get('pauseShorten'), 'processing': PROCESS_VERSION}
-        if tts.get('seed') is not None:
-            key_data['seed'] = tts['seed']
+        key_data = cue_input_data(cue, tts, voice, model_id, model_digest)
         input_key = digest(key_data)
         item = prior.get(cue['id'])
         ids = ((item or {}).get('originalResourceId'), (item or {}).get('readyWavResourceId'),
                (item or {}).get('readyMp3ResourceId'))
-        if item and item.get('text') == cue['text'] and item.get('lang') == cue['lang'] and item.get('inputKey') == input_key and all(valid_resource(workspace, registry, rid) for rid in ids):
+        if item and item.get('text') == cue['text'] and item.get('lang') == cue['lang'] and item.get('spokenText', item.get('text')) == spoken_text(cue) and item.get('inputKey') == input_key and all(valid_resource(workspace, registry, rid) for rid in ids):
             resolved.append((cue, item))
         else:
             missing.append((cue, input_key))
@@ -203,7 +210,7 @@ def main():
                     prompt_seconds = time.perf_counter() - prompt_start
             generation_start = time.perf_counter()
             language = 'English' if cue['lang'] == 'en' else 'Chinese'
-            kwargs = {'text': cue['text'], 'language': language, 'max_new_tokens': tts.get('maxTokens', 900),
+            kwargs = {'text': spoken_text(cue), 'language': language, 'max_new_tokens': tts.get('maxTokens', 900),
                       'temperature': tts.get('temperature', .85)}
             if tts.get('seed') is not None:
                 import torch
@@ -229,7 +236,7 @@ def main():
                 registry['resources'].setdefault(rid, {'path': str(dest.relative_to(workspace)), 'sha256': rid,
                     'bytes': dest.stat().st_size, 'role': role, 'status': 'active', 'registeredAt': iso(now()),
                     'unreferencedSince': None})
-            records[cue['id']] = {'cueId': cue['id'], 'text': cue['text'], 'lang': cue['lang'], 'inputKey': input_key,
+            records[cue['id']] = {'cueId': cue['id'], 'text': cue['text'], 'spokenText': spoken_text(cue), 'lang': cue['lang'], 'inputKey': input_key,
                 'rawSha256': raw_id, 'cleanKey': digest({'rawSha256': raw_id, 'processing': PROCESS_VERSION,
                     'pauseShorten': cue.get('pauseShorten')}), **metadata, 'originalResourceId': raw_id,
                 'readyWavResourceId': wav_id, 'readyMp3ResourceId': mp3_id,

@@ -6,6 +6,7 @@ import numpy as np
 import soundfile as sf
 from scipy.signal import butter, sosfilt
 from storage import atomic,iso,now,sha,resolve_project_font
+from course_text import spoken_text
 parser=argparse.ArgumentParser();parser.add_argument('--project',required=True);parser.add_argument('--run-id')
 args=parser.parse_args();PROJECT=Path(args.project).resolve();ROOT=PROJECT/'source'
 START_PERF=perf_counter()
@@ -19,6 +20,9 @@ voices={item['cueId']:item for item in json.loads((ROOT/'voice-generation.json')
 sections=[];cues=[];audio=[];starts={};ends={}
 time=.25;previous=None;previous_end=None
 for cue in source['cues']:
+ voice=voices[cue['id']]
+ if voice.get('text') != cue['text'] or voice.get('spokenText',voice.get('text')) != spoken_text(cue) or voice.get('lang') != cue['lang']:
+  raise ValueError(f'{cue["id"]}: selected audio text/language differs; run audio-inspect and audio-generate')
  section=cue['section']
  if previous is not None:
   if section!=previous:
@@ -29,7 +33,7 @@ for cue in source['cues']:
  start=time;duration=voices[cue['id']]['cleanSeconds'];end=start+duration
  parts=cue.get('subtitleParts') or [{'text':cue.get('subtitle',cue['text'])}]
  if ''.join(part['text'] for part in parts) != cue['text']:
-  raise ValueError(f'{cue["id"]}: subtitles differ from the recorded voice text')
+  raise ValueError(f'{cue["id"]}: subtitles differ from the display text')
  segment_start=start
  for index,part in enumerate(parts):
   segment_end=start+part['until'] if 'until' in part else end
@@ -42,6 +46,7 @@ for cue in source['cues']:
  if abs(segment_start-end)>.001: raise ValueError(f'{cue["id"]}: subtitles do not cover the voice cue')
  audio.append({'cueId':cue['id'],'kind':'zhNarration' if cue['lang']=='zh' else 'enExample',
                'src':os.path.relpath((ROOT/voices[cue['id']]['src']).resolve(),OUT),'start':round(start,3)})
+ if 'spokenText' in cue: audio[-1].update(displayText=cue['text'],spokenText=spoken_text(cue))
  starts[cue['id']]=start;ends[cue['id']]=end
  time=end+cue.get('pauseAfter',0)
  previous=section;previous_end=end
@@ -112,6 +117,7 @@ for section in sections:
     document += [f'## {section_id} · {clock(section["at"])}', '', '**旁白／朗读**', '']
     for voice in (item for item in source['cues'] if item['section'] == section_id):
         document.append(f'- {clock(starts[voice["id"]])}–{clock(ends[voice["id"]])}　{voice["text"]}')
+        if spoken_text(voice) != voice['text']: document.append(f'  - 实际朗读：{spoken_text(voice)}')
         parts = [item for item in cues if item['voiceCueId'] == voice['id']]
         if len(parts)>1:
             document += [f'  - 字幕 {clock(item["start"])}–{clock(item["end"])}：{item["text"]}' for item in parts]
