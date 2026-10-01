@@ -4,7 +4,7 @@
 
 ## 安装边界
 
-把整个 Skill 目录放在宿主官方支持的位置，保留目录内部相对路径。制作程序需要能读写文件和运行命令；首次准备 Python/Node 依赖及 Qwen 模型时需要联网。工作区通过 `--workspace` 单独指定，不能放在已安装的 Skill 目录内。不要把模型、字体缓存或课程工作文件写回 Skill 包。
+把整个 Skill 目录放在宿主官方支持的位置，保留目录内部相对路径。安装时保留 `SHA256SUMS.txt` 列出的全部文件及清单本身，包括 `.gitignore`；只可省略仓库历史 `.git/`。按清单逐文件校验 SHA-256，缺失或不符时报告具体文件，不宣称完整校验通过。制作程序需要能读写文件和运行命令；首次准备 Python/Node 依赖及 Qwen 模型时需要联网。工作区通过 `--workspace` 单独指定，不能放在已安装的 Skill 目录内。不要把模型、字体缓存或课程工作文件写回 Skill 包。
 
 运行前需具备 Node.js/npm、FFmpeg、用于 Remotion 渲染的 Chrome/Chromium 浏览器，以及可启动脚本的 Python 或 `uv`；具备权限的 Agent 可以协助安装这些系统程序。若浏览器不在默认位置，可把 `GRAMMAR_BROWSER_EXECUTABLE` 指向其可执行文件。`prepare` 会创建工作区内的 Python 3.12 `.grammar-env`、按内容固定的 `library/runtimes/<id>/node_modules`，并按需下载模型；它**不负责安装**上述系统程序或浏览器。当前 `prepare` 提供 macOS 和 Windows 路径；Linux 不在支持范围。
 
@@ -58,3 +58,7 @@ python3 grammar_video.py --workspace /path/to/grammar-work project my-lesson fin
 - `project <id> inventory` 查看引用和空间；`preview` 只生成清理方案，审阅后才可 `apply`；`restore` 和 `prune` 沿用现有保护与恢复机制。不要把真实 `trash` 当作试用对象。
 
 当前已在 macOS Apple Silicon 本地验证命令行路径；Windows、其他电脑和各宿主的 Skill 安装与制作流程需要分别试用。
+
+## 固定运行版本
+
+更新程序后 `prepare` 按内容身份建立新的 runtime，保留旧 runtime。历史项目仍使用其 `project.json` 固定版本；复验应建立独立测试项目，显式选择新 runtime 并复用已有音频，不原地修改 pinned 程序或偷偷迁移历史项目。

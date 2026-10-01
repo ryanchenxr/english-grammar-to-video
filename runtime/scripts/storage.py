@@ -62,6 +62,31 @@ def load_project(workspace, project_id):
     if project.get('projectId') != project_id or not isinstance(registry.get('resources'), dict): raise ValueError('project manifest invalid')
     return base, project, registry
 
+def resolve_project_font(workspace, project_id, explicit=None):
+    """Resolve the registered original font; course replacement cannot change it."""
+    base, project, registry = load_project(workspace, project_id)
+    resource_id = project.get('fontResourceId')
+    resource = registry['resources'].get(resource_id)
+    if not resource or resource.get('role') != 'font-original' or resource.get('status') != 'active':
+        raise ValueError('registered font resource missing or not active')
+    font = safe_path(workspace, resource['path'])
+    if not font.is_file() or font.suffix.lower() not in ('.ttf', '.otf'):
+        raise ValueError('registered font file missing or invalid')
+    if font.stat().st_size != resource.get('bytes') or sha(font) != resource.get('sha256'):
+        raise ValueError('registered font checksum/size mismatch')
+    if explicit is not None:
+        if not isinstance(explicit, str) or not explicit.strip():
+            raise ValueError('explicit boardFont must be a nonempty path')
+        candidate = Path(explicit).expanduser()
+        if not candidate.is_absolute(): candidate = base / 'source' / candidate
+        try: relative = candidate.relative_to(workspace.resolve())
+        except ValueError: raise ValueError('explicit boardFont conflicts with registered font')
+        selected = safe_path(workspace, relative)
+        if selected != font:
+            raise ValueError('explicit boardFont conflicts with registered font')
+    return font
+
+
 def versions(base):
     result = []
     for path in sorted((base / 'history' / 'versions').glob('*.json')):

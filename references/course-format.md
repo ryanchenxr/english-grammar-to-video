@@ -9,4 +9,6 @@
 - `camera`: 首镜头从零开始；后续可按 `section` 或 `anchor/offset` 切换。镜头聚焦时显示相关区域，结尾用缩小的总览镜头。
 - `sound`: 本 Skill 不使用模拟书写声，课程数据设为 `{ "enabled": false, "volume": 0 }`。
 
+更新现有项目时，只合并课程内容字段；保留 init 写入的 `boardFont` 等系统管理字段，不整体覆盖项目清单、资源清单或配音缓存。`boardFont` 意外缺失时，build 从 `project.json` 的 `fontResourceId` 与 `resources.json` 解析原选字体（包括自定义字体），校验状态、路径、大小和哈希；显式字体冲突或资源损坏会报错，不改用默认字体。
+
 `build` 读取 `voice-generation.json` 中的真实音长，在新 run 目录输出 `lesson.json` 和 `lesson-script.md`。`render` 校验编译后的课程，生成字形缓存并渲染。错误与未完成运行保留在 `run.json`，不作为可交付版本。

@@ -5,7 +5,7 @@ from time import perf_counter
 import numpy as np
 import soundfile as sf
 from scipy.signal import butter, sosfilt
-from storage import atomic,iso,now,sha
+from storage import atomic,iso,now,sha,resolve_project_font
 parser=argparse.ArgumentParser();parser.add_argument('--project',required=True);parser.add_argument('--run-id')
 args=parser.parse_args();PROJECT=Path(args.project).resolve();ROOT=PROJECT/'source'
 START_PERF=perf_counter()
@@ -14,6 +14,7 @@ if not RUN_ID.replace('-','').replace('_','').isalnum():raise ValueError('invali
 OUT=PROJECT/'work'/'runs'/RUN_ID;OUT.mkdir(parents=True,exist_ok=False)
 STARTED=iso(now());atomic(OUT/'run.json',{'runId':RUN_ID,'state':'active','startedAt':STARTED,'resourceIds':[]})
 source=json.loads((ROOT/'course-source.json').read_text())
+source['boardFont']=str(resolve_project_font(PROJECT.parent.parent, PROJECT.name, source.get('boardFont')))
 voices={item['cueId']:item for item in json.loads((ROOT/'voice-generation.json').read_text())['clips']}
 sections=[];cues=[];audio=[];starts={};ends={}
 time=.25;previous=None;previous_end=None
