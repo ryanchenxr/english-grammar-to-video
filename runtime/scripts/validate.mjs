@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import {inkOverlaps} from '../src/ink-actions.mjs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -89,6 +90,8 @@ function validateWritingV5(lesson, lessonPath) {
       errors.push(`v5 intent ${intent.markId}: cue or board target mismatch`);
   }
   for (const s of lesson.sketches ?? []) if (!goodText(s.id) || !goodText(s.d) || !finite(s.at) || !finite(s.duration) || s.at<0 || s.duration<=0 || s.at+s.duration>duration) errors.push(`v5 sketch ${s.id}: invalid`);
+  for (const [a,b] of inkOverlaps(lesson)) errors.push(
+    `v5 single pen conflict: ${a.kind} ${a.id} [${a.at.toFixed(3)},${(a.at+a.duration).toFixed(3)}) / ${b.kind} ${b.id} [${b.at.toFixed(3)},${(b.at+b.duration).toFixed(3)})`);
   if (lesson.sound?.enabled && (!goodText(lesson.sound.src) || !fs.existsSync(path.resolve(path.dirname(lessonPath),lesson.sound.src)) ||
       !finite(lesson.sound.volume) || lesson.sound.volume<0 || lesson.sound.volume>.4)) errors.push('v5: writing sound invalid');
   return errors;

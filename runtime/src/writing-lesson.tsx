@@ -102,10 +102,28 @@ const markPath = (mark: Mark, line: InkLine) => {
   const rx = (b.right - b.x) / 2 + 20, ry = (b.bottom - b.top) / 2 + 17;
   return `M ${cx + rx} ${cy} C ${cx + rx} ${cy - ry * 1.35} ${cx - rx} ${cy - ry * 1.35} ${cx - rx} ${cy} C ${cx - rx} ${cy + ry * 1.35} ${cx + rx} ${cy + ry * 1.35} ${cx + rx} ${cy}`;
 };
+export const tracedParts = (d: string, fraction: number) => {
+  const geometry = new svgPathProperties(d);
+  const distance = geometry.getTotalLength() * clamp(fraction);
+  let offset = 0;
+  return geometry.getParts().filter(part => part.length > 0).map(part => {
+    const visible = Math.max(0, Math.min(part.length, distance - offset));
+    offset += part.length;
+    // Z closes to the original subpath start, not this segment's new M.
+    const command = part.details[0] === 'Z' ? `L ${part.end.x} ${part.end.y}` : part.details.join(' ');
+    return {d: `M ${part.start.x} ${part.start.y} ${command}`, length: part.length, visible, part};
+  });
+};
+export const pointOnTrace = (d: string, fraction: number) => {
+  const parts = tracedParts(d, fraction);
+  const current = parts.find(p => p.visible > 0 && p.visible < p.length) ?? [...parts].reverse().find(p => p.visible > 0) ?? parts[0];
+  return current ? current.part.getPointAtLength(current.visible) : null;
+};
 export const TracedPath: React.FC<{d: string; fraction: number; color: string; width?: number; opacity?: number}> = ({d, fraction, color, width = 7, opacity = 1}) => {
-  if (!d) return null;
-  const length = new svgPathProperties(d).getTotalLength();
-  return <path d={d} fill="none" stroke={color} strokeWidth={width} opacity={opacity} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={`${length} ${length}`} strokeDashoffset={length * (1 - fraction)}/>;
+  if (!d || fraction <= 0) return null;
+  return <g>{tracedParts(d, fraction).filter(p => p.visible > 0).map((part, i) =>
+    <path key={i} d={part.d} fill="none" stroke={color} strokeWidth={width} opacity={opacity} strokeLinecap="round" strokeLinejoin="round"
+      strokeDasharray={`${part.length} ${part.length}`} strokeDashoffset={part.length - part.visible}/>)}</g>;
 };
 export const Pen: React.FC<{x: number; y: number; erasing?: boolean}> = ({x, y, erasing}) => <g transform={`translate(${x} ${y}) rotate(43)`}>
   {erasing ? <><rect x={-12} y={-103} width={24} height={104} rx={5} fill="#333127"/><rect x={-14} y={-18} width={28} height={25} rx={5} fill="#E8CFB5" stroke="#8F7B68" strokeWidth={2}/><path d="M -10 -75 L 10 -75" stroke="#AE9C83" strokeWidth={3}/></>

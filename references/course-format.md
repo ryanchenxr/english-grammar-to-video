@@ -26,3 +26,11 @@
 每个短 cue 使用完整单行字幕，按其录音实测音长编译。总结的“be 加动词 ing”与“be 不能丢”分别建 cue，前者可用 spokenText 明确字母读法；完整词 playing / writing / swimming 无须替换。拆分后同步 writes、marks、annotationIntents、camera 的 cue 锚点，保持板书原文本。
 
 voice-generation.json 保留展示 text、实际 spokenText、语言与 inputKey；实际 TTS 输入参与原有缓存身份。build 同时校验选用音频的展示文本、朗读文本与语言，不放松字幕拼接校验。旧课程省略 spokenText，继续使用原文本与原缓存身份。
+
+## 开场、练习与单笔时序
+
+默认先介绍概念和本课问题，再自然过渡到情境；用户明确另定结构时遵从。练习按“题目 → 思考机会 → 必要提示 → 解释”组织 cue 与动作；中文提示在需要时出现，不因文字语言而提前。思考机会可用题目 cue 的 pauseAfter，提示与解释分别锚定后续 cue。
+
+writes、marks、sketches 的落笔活动区间统一为 `[at, at + duration)`，跨类型、区域和 section 也不得重叠。结束恰好接下一动作可以；已写完笔迹继续留在板面、同时旁白/字幕均不算冲突。v5 校验列出冲突类型、ID 和起止时间，不自动移动动作。用源 anchor/offset/duration 修正编排后重新 build 和校验。
+
+简图 SVG 可包含多次 M/m 与曲线、闭合路径；按原路径段顺序逐段显露，未开始的段不出现，已完成的段保留；笔尖使用同一段的实际长度位置。不能先贴完整图再假画，也不能等结束才整幅闪现。

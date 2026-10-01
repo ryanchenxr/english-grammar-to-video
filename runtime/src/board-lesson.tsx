@@ -1,8 +1,8 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Sequence, useCurrentFrame} from 'remotion';
-import {svgPathProperties} from 'svg-path-properties';
+import {activeInkActions} from './ink-actions.mjs';
 import manifestJson from './chalk-assets.json';
-import {ChalkText, Pen, pointAlong, TracedPath, type InkLine} from './writing-lesson';
+import {ChalkText, Pen, pointAlong, pointOnTrace, TracedPath, type InkLine} from './writing-lesson';
 
 type Color = 'ink' | 'blue' | 'orange';
 type Write = {id: string; section: string; text: string; x: number; y: number; size: number; color: Color; at: number; duration: number};
@@ -74,20 +74,19 @@ export const BoardLesson: React.FC<BoardLessonData> = (lesson) => {
     ...(camera.moving && camera.previous.section ? camera.previous.showSections ?? [camera.previous.section] : []),
   ]) : null;
   const visible = (section: string) => !scoped || scoped.has(section);
+  const active = activeInkActions(lesson, time);
+  if (active.length > 1) throw new Error(`Multiple active ink actions at ${time.toFixed(3)}: ${active.map(a => `${a.kind}:${a.id}`).join(', ')}`);
+  const action = active[0];
   let pen: {x: number; y: number} | null = null;
-  for (const write of lesson.writes) if (visible(write.section) && time >= write.at && time < write.at + write.duration) {
-    const line = manifest.entries[write.id];
-    pen = pointAlong(line, line.total * progress(time, write.at, write.duration));
-  }
-  for (const {mark, d} of paths) if (visible(mark.section) && time >= mark.at && time < mark.at + mark.duration) {
-    const path = new svgPathProperties(d);
-    const p = path.getPointAtLength(path.getTotalLength() * progress(time, mark.at, mark.duration));
-    pen = {x: p.x, y: p.y};
-  }
-  for (const sketch of lesson.sketches) if (visible(sketch.section) && time >= sketch.at && time < sketch.at + sketch.duration) {
-    const path = new svgPathProperties(sketch.d);
-    const p = path.getPointAtLength(path.getTotalLength() * progress(time, sketch.at, sketch.duration));
-    pen = {x: p.x, y: p.y};
+  if (action && visible(action.section)) {
+    const fraction = progress(time, action.at, action.duration);
+    if (action.kind === 'write') {
+      const line = manifest.entries[action.id];
+      pen = pointAlong(line, line.total * fraction);
+    } else {
+      const d = action.kind === 'mark' ? paths.find(p => p.mark.id === action.id)!.d : lesson.sketches.find(s => s.id === action.id)!.d;
+      pen = pointOnTrace(d, fraction);
+    }
   }
   const cue = lesson.cues.find((item) => time >= item.start && time < item.end);
   return <AbsoluteFill style={{background: BG, color: INK, fontFamily: 'PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif', overflow: 'hidden'}}>
