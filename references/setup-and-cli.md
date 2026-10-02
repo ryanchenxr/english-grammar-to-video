@@ -36,7 +36,7 @@ Windows PowerShell 可将命令开头换成 `py -3.12 .\grammar_video.py --works
 
 ## 制作一课
 
-先按 [课程格式](course-format.md)在工作区编写 `writing-board-v5` 课程源，再运行：
+先按 SKILL 的“每次制作前的审校”和[课程格式](course-format.md)在工作区编写或审校 `writing-board-v5` 课程源；复用旧稿也须修改实际台词、标题时机、练习顺序和术语读法后再配音。正常 audio-inspect/audio-generate 与 build 会执行必经检查；检查错误由 Agent 修正课程数据后继续。随后运行：
 
 ```sh
 python3 grammar_video.py --workspace /path/to/grammar-work init --project-id my-lesson --course /path/to/course.json

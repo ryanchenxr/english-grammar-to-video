@@ -1,0 +1,27 @@
+{
+  "description": "最小课程源差异片段；合并到正常 v5 结构使用，不是独立可渲染课程。修正先于批量配音。",
+  "before": {
+    "title": "现在进行时",
+    "cues": [
+      {"id":"h0","section":"intro","lang":"zh","text":"先别急着记规则，看一个生活里的例子。"},
+      {"id":"h1","section":"intro","lang":"zh","text":"晚上八点，妈妈问你：你在做什么？"},
+      {"id":"h2","section":"intro","lang":"en","text":"I am doing my homework."},
+      {"id":"h3","section":"intro","lang":"zh","text":"你回答的不是习惯，是此刻正在做的事。"},
+      {"id":"concept","section":"intro","lang":"zh","text":"这种句子，英语要用现在进行时。"},
+      {"id":"ending","section":"rule","lang":"zh","text":"动词后面加 ing。"}
+    ],
+    "writes": [{"id":"title","text":"现在进行时","anchor":"concept","offset":0.15}]
+  },
+  "after": {
+    "title": "现在进行时",
+    "cues": [
+      {"id":"h0","section":"intro","lang":"zh","text":"现在进行时，能帮我们说清此刻正在做的事。"},
+      {"id":"h1","section":"intro","lang":"zh","text":"怎样用英语回答你正在做什么？来看晚上的这一幕。"},
+      {"id":"h2","section":"intro","lang":"en","text":"I am doing my homework."},
+      {"id":"h3","section":"intro","lang":"zh","text":"你回答的不是习惯，是此刻正在做的事。"},
+      {"id":"ending","section":"rule","lang":"zh","text":"动词后面加 ing。","spokenText":"动词后面加 I、N、G。"}
+    ],
+    "writes": [{"id":"title","text":"现在进行时","anchor":"h0","offset":0.15}]
+  },
+  "review": "前两句明确概念与问题，再进入情境；标题随概念介绍起笔；字幕保持 ing，实际输入拼字母，完整 doing 不变。旧版本另存，不原地覆盖。"
+}

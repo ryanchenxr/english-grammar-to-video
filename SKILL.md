@@ -27,6 +27,12 @@ description: 根据英语语法概念，为中文学习者制作 16:9 有声手�
 
 默认使用随包提供的“字制区喜脉喜欢体”，`init` 无须指定字体；用户明确提供其他合法 TTF/OTF 时传 `--font`，显式选择优先。字体缺失、哈希不符或缺字时报错，不静默替换。笔迹由所选字体生成；视频保留旁白，不加入模拟书写声。
 
+## 每次制作前的审校
+
+新写或复用旧稿，都先阅读实际 cues/text/spokenText、标题 writes/anchor、练习题目与提示时机，按本 Skill 当前教学与读法规则审校，再修改课程数据、进入批量配音。安装新版、新建项目、换 runtime 或通过文件哈希校验，都不代表旧内容符合当前规则。不得只读命令/字段格式就复用讲稿；不要求老师填写技术表或逐项审批。
+
+正常 audio-inspect/audio-generate 会先检查独立 ing 的有效朗读输入和标题开场锚点，build 再查并按录音长度复查标题时机。遇到 teaching-preflight-failed，Agent 根据具体 cue 自主审校修正后继续；通过仅说明确定性检查通过，仍须判断概念与问题是否讲清、练习顺序是否合理、声画含义是否一致，不能用关键词或“已审核=true”代替。用户明确要求原样保留历史课程时，不自动改写、升级或覆盖；保留固定旧版本，说明与当前规则的差异。特殊开场结构与默认结构检查冲突时遵从用户明确要求并说明限制，不伪造通过标记。检查约定及[最小前后示例](examples/teaching-review.json)见[课程格式](references/course-format.md)。
+
 ## 配音与制作
 
 默认女声为 `teaching-female-fixed-v1`，男声为 `teaching-male-synthetic-intro-v1`。两者使用本地 Qwen3-TTS 0.6B Base 固定参考、`speaker-embedding-only` 模式和各自不可覆盖的[音色配置](references/voice-profile.md)；一次任务只构建一次 clone prompt，供该任务各段复用。男声参考是获授权的合成项目介绍，不是私人原录音。声音素材范围见 [VOICE_ASSETS](VOICE_ASSETS.md)。用户明确提供其他参考时可使用 `init --reference`；更换模型或音色前先用中文、英文及混合句短试听，选定后可在后续课程复用。

@@ -15,6 +15,7 @@ import soundfile as sf
 from huggingface_hub import snapshot_download
 from storage import atomic, iso, now, sha, safe_path
 from course_text import spoken_text
+from teaching_preflight import require_teaching_ready
 
 from audio_identity import digest, cue_input_data, legacy_input_key, processing_identity, postprocess_key, PROCESS_VERSION, VOICE_VERSION
 
@@ -148,6 +149,7 @@ def main():
     registry_path = project_dir / 'resources.json'; registry = json.loads(registry_path.read_text())
     source_dir = project_dir / 'source'
     course = json.loads((source_dir / 'course-source.json').read_text())
+    require_teaching_ready(course)  # Before cache lookup, model resolution, or loading.
     voice_path = source_dir / 'voice-generation.json'
     previous = json.loads(voice_path.read_text()) if voice_path.exists() else {'clips': []}
     prior = {x['cueId']: x for x in previous['clips']}
