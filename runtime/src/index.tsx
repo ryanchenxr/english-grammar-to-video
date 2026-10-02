@@ -4,7 +4,7 @@ import {BoardLesson, type BoardLessonData} from './board-lesson';
 
 const sample: BoardLessonData = {
   format: 'writing-board-v5', title: 'Grammar Lesson', audience: '', scope: 'Preview shell',
-  boardFont: '', duration: 1, boardWidth: 1920, boardHeight: 1080,
+  boardFont: '', fontSha256: '', glyphManifest: {source: '', sha256: '', entries: {}}, duration: 1, boardWidth: 1920, boardHeight: 1080,
   sections: [{id: 'empty', at: 0}], shots: [{id: 'empty', at: 0, duration: 0, x: 960, y: 455, zoom: 1}],
   writes: [], marks: [], sketches: [], cues: [], audio: [],
 };

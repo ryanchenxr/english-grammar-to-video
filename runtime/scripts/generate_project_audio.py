@@ -16,12 +16,7 @@ from huggingface_hub import snapshot_download
 from storage import atomic, iso, now, sha, safe_path
 from course_text import spoken_text
 
-PROCESS_VERSION = 'trim-rms-002-pad-080-normalize-105-085-mp3-128k-v1'
-VOICE_VERSION = 'qwen3-tts-custom-or-base-offline-v1'
-
-
-def digest(value):
-    return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()
+from audio_identity import digest, cue_input_data, legacy_input_key, processing_identity, postprocess_key, PROCESS_VERSION, VOICE_VERSION
 
 
 def local_model(model_id, source):
@@ -49,6 +44,7 @@ def valid_resource(workspace, registry, rid):
 
 def process(raw, wav, mp3, pause=None):
     audio, sr = sf.read(raw)
+    if not len(audio) or not np.isfinite(audio).all(): raise ValueError('invalid original audio samples')
     if sr != 24000:
         raise ValueError(f'Qwen sample rate changed: {sr}')
     width = int(.02 * sr)
@@ -59,14 +55,16 @@ def process(raw, wav, mp3, pause=None):
     begin = max(0, int((active[0] * .02 - .08) * sr))
     end = min(len(audio), int(((active[-1] + 1) * .02 + .08) * sr))
     clean = audio[begin:end]
-    if pause:
+    pause_check = None
+    if pause is not None:
+        processing_identity({'pauseShorten': pause})
         a = int(pause['start'] * sr); b = int(pause['end'] * sr); target = pause['targetSeconds']
         if not (0 < a < b < len(clean) and 0 < target < (b - a) / sr):
             raise ValueError('invalid pause edit')
         removal = int(((b - a) / sr - target) * sr)
         cut = a + ((b - a) - removal) // 2
-        if float(np.sqrt(np.mean(clean[cut:cut + removal] ** 2))) > .01:
-            raise ValueError('pause edit would remove speech')
+        if removal <= 0: raise ValueError('pause edit removes less than one sample')
+        pause_check = local_pause_guard(clean, cut, removal, sr)
         clean = np.concatenate((clean[:cut], clean[cut + removal:]))
     rms = float(np.sqrt(np.mean(clean * clean))); peak = float(np.max(np.abs(clean)))
     gain = min(.105 / max(rms, 1e-7), .85 / max(peak, 1e-7))
@@ -74,7 +72,7 @@ def process(raw, wav, mp3, pause=None):
     sf.write(wav, clean, sr)
     subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', str(wav),
                     '-codec:a', 'libmp3lame', '-b:a', '128k', str(mp3)], check=True)
-    return {'rawSeconds': round(len(audio) / sr, 3), 'cleanSeconds': round(len(clean) / sr, 3), 'gain': round(gain, 3)}
+    return {'rawSeconds': round(len(audio) / sr, 3), 'cleanSeconds': round(len(clean) / sr, 3), 'gain': round(gain, 3), **({'pauseGuard': pause_check} if pause_check else {})}
 
 
 def save_unique(source, folder):
@@ -89,15 +87,52 @@ def save_unique(source, folder):
     return content_hash, target
 
 
-def cue_input_data(cue, tts, voice, model_id, model_digest):
-    # Keep legacy keys unchanged when spokenText is absent; hash the actual TTS input.
-    data = {'version': VOICE_VERSION, 'text': spoken_text(cue), 'lang': cue['lang'],
-            'modelId': model_id, 'modelDigest': model_digest, 'voice': voice,
-            'temperature': tts.get('temperature', .85), 'maxTokens': tts.get('maxTokens', 900),
-            'pauseShorten': cue.get('pauseShorten'), 'processing': PROCESS_VERSION}
-    if tts.get('seed') is not None:
-        data['seed'] = tts['seed']
-    return data
+def raw_identity_matches(cue, item, identity, project_dir):
+    if item.get('lang') != cue['lang'] or item.get('spokenText', item.get('text')) != spoken_text(cue): return False
+    key = digest(identity)
+    if item.get('generationKey'):
+        return item['generationKey'] == key and item.get('generationIdentity', identity) == identity
+    # A raw hash alone cannot establish generation identity. Verify an old combined key.
+    pauses = [None, cue.get('pauseShorten')]
+    if 'pauseShorten' in item: pauses.append(item['pauseShorten'])
+    pauses.append(item.get('postprocessIdentity', {}).get('pauseShorten'))
+    if any(item.get('inputKey') == legacy_input_key(identity, pause) for pause in pauses): return True
+    # Old post-edited records did not store their settings; use actual saved source/voice evidence.
+    for folder in (project_dir / 'history/snapshots').glob('*'):
+        source_file = folder / 'course-source.json'; voice_file = folder / 'voice-generation.json'
+        if not source_file.is_file() or not voice_file.is_file(): continue
+        saved_cues = {c['id']: c for c in json.loads(source_file.read_text())['cues']}
+        for old in json.loads(voice_file.read_text())['clips']:
+            old_cue = saved_cues.get(old['cueId'])
+            if (old_cue and old.get('rawSha256') == item.get('rawSha256') and old.get('lang') == cue['lang']
+                    and old.get('spokenText', old.get('text')) == spoken_text(cue)
+                    and old.get('inputKey') == legacy_input_key(identity, old_cue.get('pauseShorten'))): return True
+    return False
+
+
+def clip_plan(cue, item, identity, project_dir, workspace, registry):
+    processing_identity(cue)  # Validate explicit processing input before any model call.
+    raw = valid_resource(workspace, registry, (item or {}).get('originalResourceId'))
+    if not item or raw is None or sha(raw) != item.get('rawSha256') or not raw_identity_matches(cue, item, identity, project_dir):
+        return 'generate', raw
+    expected = postprocess_key(item['rawSha256'], cue)
+    ready = all(valid_resource(workspace, registry, item.get(k)) for k in ('readyWavResourceId', 'readyMp3ResourceId'))
+    if ready and item.get('postprocessKey', item.get('cleanKey')) == expected: return 'cached', raw
+    return 'reprocess', raw
+
+
+def local_pause_guard(clean, cut, removal, sr):
+    # Short local windows + peak avoid dilution of a brief sound in a long average.
+    # These measurements still cannot prove that a quiet consonant/breath is absent.
+    span = clean[cut:cut + removal]
+    window = max(1, round(.01 * sr)); hop = max(1, round(.005 * sr))
+    rms = [float(np.max(np.sqrt(np.mean(span[i:i+window] ** 2, axis=0))))
+           for i in range(0, len(span), hop)]
+    maximum = max(rms); peak = float(np.max(np.abs(span)))
+    if maximum > .01 or peak > .03:
+        raise ValueError('pause edit fails local-energy clipping guard; this is not word alignment or a listening judgment')
+    return {'maxLocalRms': maximum, 'peak': peak, 'windowSeconds': .01, 'hopSeconds': .005,
+            'evidenceScope': 'clipping protection only; does not prove absence of speech'}
 
 
 def main():
@@ -162,20 +197,19 @@ def main():
         voice.update({'referenceMode': reference_mode,
                       'referenceTextSha256': hashlib.sha256(reference_text.encode()).hexdigest() if reference_text else None,
                       'voiceProfileSha256': sha(profile_path) if profile_path else None})
-    resolved = []; missing = []
+    plans = []
     for cue in course['cues']:
-        key_data = cue_input_data(cue, tts, voice, model_id, model_digest)
-        input_key = digest(key_data)
+        identity = cue_input_data(cue, tts, voice, model_id, model_digest)
         item = prior.get(cue['id'])
-        ids = ((item or {}).get('originalResourceId'), (item or {}).get('readyWavResourceId'),
-               (item or {}).get('readyMp3ResourceId'))
-        if item and item.get('text') == cue['text'] and item.get('lang') == cue['lang'] and item.get('spokenText', item.get('text')) == spoken_text(cue) and item.get('inputKey') == input_key and all(valid_resource(workspace, registry, rid) for rid in ids):
-            resolved.append((cue, item))
-        else:
-            missing.append((cue, input_key))
+        action, raw = clip_plan(cue, item, identity, project_dir, workspace, registry)
+        plans.append((cue, digest(identity), identity, action, raw, item))
+    resolved = [p for p in plans if p[3] == 'cached']
+    missing = [p for p in plans if p[3] == 'generate']
+    reprocess = [p for p in plans if p[3] == 'reprocess']
     if args.inspect:
         print(json.dumps({'status': 'inspected', 'projectId': project['projectId'], 'cachedCues': len(resolved),
-                          'missingCues': [x['id'] for x, _ in missing], 'modelId': model_id,
+                          'missingCues': [p[0]['id'] for p in missing], 'reprocessCues': [p[0]['id'] for p in reprocess],
+                          'rawReusableCues': len(resolved) + len(reprocess), 'modelId': model_id,
                           'mode': mode, 'referenceMode': reference_mode,
                           'voiceProfileResourceId': tts.get('voiceProfileResourceId'),
                           'seconds': round(time.perf_counter() - started, 3)}, ensure_ascii=False))
@@ -185,15 +219,31 @@ def main():
     run_path = run_dir / 'run.json'; started_at = iso(now())
     atomic(run_path, {'runId': run_id, 'state': 'active', 'startedAt': started_at, 'resourceIds': []})
     temp = run_dir / 'tmp'; temp.mkdir()
-    records = {cue['id']: item for cue, item in resolved}; generated_ids = set()
+    records = {}; generated_ids = set(); model_load_count = 0; tts_calls = 0
+    previous_backup = run_dir / 'input-voice-generation.json'
+    atomic(previous_backup, previous)
+    backup_id = f'run:{run_id}:input-voice-generation.json'
+    registry['resources'][backup_id] = {'path': str(previous_backup.relative_to(workspace)), 'sha256': sha(previous_backup),
+        'bytes': previous_backup.stat().st_size, 'role': 'log', 'status': 'active', 'registeredAt': iso(now()), 'unreferencedSince': None, 'runId': run_id}
+    generated_ids.add(backup_id)
+    atomic(registry_path, registry)
     try:
         model = None; load_seconds = 0; generation_seconds = 0; prompt_seconds = 0; clone_prompt = None
-        for cue, input_key in missing:
-            if model is None:
+        for index, (cue, input_key, identity, action, cached_raw, item) in enumerate(plans):
+            if action == 'cached':
+                record = dict(item)
+                if not record.get('generationKey'): record['legacyInputKey'] = record.get('inputKey')
+                record.update(text=cue['text'], spokenText=spoken_text(cue), generationKey=input_key, generationIdentity=identity,
+                              inputKey=input_key, postprocessKey=postprocess_key(record['rawSha256'], cue),
+                              postprocessIdentity=processing_identity(cue))
+                records[cue['id']] = record
+                continue
+            if action == 'generate' and model is None:
                 from qwen_tts import Qwen3TTSModel
                 import torch
                 device = 'mps' if torch.backends.mps.is_available() else 'cuda:0' if torch.cuda.is_available() else 'cpu'
                 load_start = time.perf_counter()
+                model_load_count += 1
                 model = Qwen3TTSModel.from_pretrained(str(model_path), device_map=device,
                     dtype=torch.float32 if device in ('mps', 'cpu') else torch.bfloat16,
                     attn_implementation='eager')
@@ -208,26 +258,32 @@ def main():
                     if len(clone_prompt) != 1 or clone_prompt[0].x_vector_only_mode != (reference_mode == 'speaker-embedding-only'):
                         raise ValueError('clone prompt mode differs from fixed voice profile')
                     prompt_seconds = time.perf_counter() - prompt_start
-            generation_start = time.perf_counter()
-            language = 'English' if cue['lang'] == 'en' else 'Chinese'
-            kwargs = {'text': spoken_text(cue), 'language': language, 'max_new_tokens': tts.get('maxTokens', 900),
-                      'temperature': tts.get('temperature', .85)}
-            if tts.get('seed') is not None:
-                import torch
-                torch.manual_seed(tts['seed'])
-                np.random.seed(tts['seed'])
-            if mode == 'preset':
-                wavs, sr = model.generate_custom_voice(**kwargs, speaker=tts['speaker'])
+            raw = temp / f'{index:04d}-raw.wav'
+            wav = temp / f'{index:04d}-ready.wav'; mp3 = temp / f'{index:04d}-ready.mp3'
+            if action == 'generate':
+                generation_start = time.perf_counter()
+                language = 'English' if cue['lang'] == 'en' else 'Chinese'
+                kwargs = {'text': spoken_text(cue), 'language': language, 'max_new_tokens': tts.get('maxTokens', 900),
+                          'temperature': tts.get('temperature', .85)}
+                if tts.get('seed') is not None:
+                    import torch
+                    torch.manual_seed(tts['seed'])
+                    np.random.seed(tts['seed'])
+                tts_calls += 1
+                if mode == 'preset':
+                    wavs, sr = model.generate_custom_voice(**kwargs, speaker=tts['speaker'])
+                else:
+                    wavs, sr = model.generate_voice_clone(**kwargs, voice_clone_prompt=clone_prompt)
+                generation_seconds += time.perf_counter() - generation_start
+                audio = np.asarray(wavs[0], dtype=np.float32).reshape(-1)
+                if not len(audio) or not np.isfinite(audio).all():
+                    raise ValueError(f'invalid output {cue["id"]}')
+                sf.write(raw, audio, sr)
             else:
-                wavs, sr = model.generate_voice_clone(**kwargs, voice_clone_prompt=clone_prompt)
-            generation_seconds += time.perf_counter() - generation_start
-            audio = np.asarray(wavs[0], dtype=np.float32).reshape(-1)
-            if not len(audio) or not np.isfinite(audio).all():
-                raise ValueError(f'invalid output {cue["id"]}')
-            raw = temp / f'{cue["id"]}-raw.wav'; wav = temp / f'{cue["id"]}-ready.wav'; mp3 = temp / f'{cue["id"]}-ready.mp3'
-            sf.write(raw, audio, sr)
+                raw = cached_raw  # Immutable validated original; no model loading or inference.
             metadata = process(raw, wav, mp3, cue.get('pauseShorten'))
-            raw_id, raw_dest = save_unique(raw, project_dir / 'audio/originals')
+            if action == 'generate': raw_id, raw_dest = save_unique(raw, project_dir / 'audio/originals')
+            else: raw_id, raw_dest = item['rawSha256'], cached_raw
             wav_id, wav_dest = save_unique(wav, project_dir / 'audio/ready')
             mp3_id, mp3_dest = save_unique(mp3, project_dir / 'audio/ready')
             for rid, dest, role in ((raw_id, raw_dest, 'tts-original'), (wav_id, wav_dest, 'tts-ready-wav'),
@@ -237,12 +293,14 @@ def main():
                     'bytes': dest.stat().st_size, 'role': role, 'status': 'active', 'registeredAt': iso(now()),
                     'unreferencedSince': None})
             records[cue['id']] = {'cueId': cue['id'], 'text': cue['text'], 'spokenText': spoken_text(cue), 'lang': cue['lang'], 'inputKey': input_key,
-                'rawSha256': raw_id, 'cleanKey': digest({'rawSha256': raw_id, 'processing': PROCESS_VERSION,
-                    'pauseShorten': cue.get('pauseShorten')}), **metadata, 'originalResourceId': raw_id,
+                'rawSha256': raw_id, 'generationKey': input_key, 'generationIdentity': identity,
+                'postprocessKey': postprocess_key(raw_id, cue), 'postprocessIdentity': processing_identity(cue),
+                'cleanKey': postprocess_key(raw_id, cue), **({'previousPostprocessKey': item.get('postprocessKey', item.get('cleanKey')), 'previousReadyWavResourceId': item.get('readyWavResourceId'), 'previousReadyMp3ResourceId': item.get('readyMp3ResourceId')} if item and action == 'reprocess' else {}), **({'legacyInputKey': item.get('legacyInputKey', item.get('inputKey'))} if item and (item.get('legacyInputKey') or not item.get('generationKey')) else {}),
+                **metadata, 'originalResourceId': raw_id,
                 'readyWavResourceId': wav_id, 'readyMp3ResourceId': mp3_id,
                 'src': os.path.relpath(mp3_dest, source_dir)}
         clips = [records[c['id']] for c in course['cues']]
-        output = {'modelId': model_id, 'modelDigest': model_digest, 'mode': mode,
+        output = {'cacheSchemaVersion': 2, 'modelId': model_id, 'modelDigest': model_digest, 'mode': mode,
             'speaker': tts.get('speaker') if mode == 'preset' else None,
             'referenceSha256': sha(reference) if reference else None,
             'referenceMode': reference_mode,
@@ -258,15 +316,17 @@ def main():
         atomic(registry_path, registry); atomic(voice_path, output)
         timings = {'modelLoadSeconds': round(load_seconds, 3), 'promptSeconds': round(prompt_seconds, 3),
                    'generationSeconds': round(generation_seconds, 3),
-                   'totalSeconds': round(time.perf_counter() - started, 3)}
+                   'totalSeconds': round(time.perf_counter() - started, 3), 'modelLoadCount': model_load_count, 'ttsCalls': tts_calls}
         atomic(run_path, {'runId': run_id, 'state': 'completed', 'startedAt': started_at,
                           'completedAt': iso(now()), 'resourceIds': sorted(generated_ids),
-                          'generatedCueIds': [x['id'] for x, _ in missing], 'timings': timings})
-        print(json.dumps({'status': 'completed', 'runId': run_id, 'generatedCueIds': [x['id'] for x, _ in missing],
+                          'generatedCueIds': [p[0]['id'] for p in missing], 'reprocessedCueIds': [p[0]['id'] for p in reprocess], 'timings': timings})
+        print(json.dumps({'status': 'completed', 'runId': run_id, 'generatedCueIds': [p[0]['id'] for p in missing], 'reprocessedCueIds': [p[0]['id'] for p in reprocess],
                           'cachedCues': len(resolved), 'voiceManifest': str(voice_path), 'timings': timings}, ensure_ascii=False))
     except Exception as exc:
         atomic(run_path, {'runId': run_id, 'state': 'failed', 'resolved': False, 'startedAt': started_at,
-                          'completedAt': iso(now()), 'resourceIds': [], 'error': str(exc)})
+                          'completedAt': iso(now()), 'resourceIds': sorted(generated_ids), 'error': str(exc),
+                          'modelLoadCount': model_load_count, 'ttsCalls': tts_calls,
+                          'inputVoiceManifest': str(previous_backup.relative_to(project_dir))})
         raise
 
 

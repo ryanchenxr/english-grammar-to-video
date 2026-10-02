@@ -62,6 +62,21 @@ def env_python(workspace):
     return root / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
 
 
+def verify_prebuilt(root):
+    result = subprocess.run(['node', str(RUNTIME / 'scripts/template_bundle.mjs'), str(root)], capture_output=True, text=True)
+    if result.returncode: raise ValueError(result.stderr.strip() or 'prebuilt template validation failed')
+    return json.loads(result.stdout.strip())
+
+
+def dependency_root(workspace, release):
+    manifest = json.loads((release / 'runtime.json').read_text())
+    dep_id = manifest.get('dependenciesRuntimeReleaseId')
+    if dep_id and not re.fullmatch(r'grammar-public-[a-f0-9]{16}', dep_id): raise ValueError('invalid shared dependency runtime')
+    root = workspace / 'library/runtimes' / dep_id if dep_id else release
+    if hash_file(root / 'package-lock.json') != manifest['lockSha256']: raise ValueError('shared dependency lock differs')
+    return root
+
+
 def installation(workspace):
     path = workspace / 'skill-install.json'
     if not path.is_file():
@@ -73,6 +88,9 @@ def installation(workspace):
         target = release / relative
         if not target.is_file() or hash_file(target) != expected:
             raise ValueError(f'pinned runtime changed: {relative}')
+    if manifest.get('prebuiltBundleId'):
+        verified = verify_prebuilt(release)
+        if verified['bundleId'] != manifest['prebuiltBundleId']: raise ValueError('installed template identity differs')
     return data, release
 
 
@@ -102,9 +120,12 @@ def doctor(args):
     try:
         data, release = installation(workspace)
         checks['runtime'] = True
-        checks['nodeDependencies'] = (release / 'node_modules/@remotion/cli/remotion-cli.js').exists()
+        deps = dependency_root(workspace, release)
+        checks['nodeDependencies'] = (deps / 'node_modules/@remotion/renderer/package.json').exists()
+        try: verify_prebuilt(release); checks['prebuiltTemplate'] = True
+        except Exception: checks['prebuiltTemplate'] = False
     except Exception:
-        data = None; checks['runtime'] = False; checks['nodeDependencies'] = False
+        data = None; checks['runtime'] = False; checks['nodeDependencies'] = False; checks['prebuiltTemplate'] = False
     if py.is_file():
         result = subprocess.run([str(py), '-c', 'import PIL,numpy,soundfile,scipy,fontTools,qwen_tts,torch,huggingface_hub'],
                                 capture_output=True, text=True)
@@ -154,6 +175,7 @@ def prepare(args):
         raise RuntimeError('only macOS and Windows preparation paths are provided in this beta')
     if not all(shutil.which(name) for name in ('node', 'npm', 'ffmpeg')):
         raise RuntimeError('Node.js, npm and ffmpeg must be available on PATH')
+    template = verify_prebuilt(RUNTIME)
     started = time.perf_counter(); workspace.mkdir(parents=True, exist_ok=True)
     previous_install = workspace / 'skill-install.json'
     previous = json.loads(previous_install.read_text()) if previous_install.is_file() else {}
@@ -192,9 +214,21 @@ def prepare(args):
             raise RuntimeError('installed runtime differs from package; preserve it and inspect')
     else:
         shutil.copytree(RUNTIME, release, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
-        (release / 'runtime.json').write_text(json.dumps({'runtimeReleaseId': release_id, 'sha256': digest,
-            'files': files, 'lockSha256': files['package-lock.json']}, indent=2) + '\n')
-    if not (release / 'node_modules/@remotion/cli/remotion-cli.js').exists():
+        runtime_manifest = {'runtimeReleaseId': release_id, 'sha256': digest, 'files': files,
+            'lockSha256': files['package-lock.json'], 'prebuiltBundleId': template['bundleId']}
+        if previous.get('runtimeReleaseId'):
+            try:
+                old_release = workspace / 'library/runtimes' / previous['runtimeReleaseId']
+                old_deps = dependency_root(workspace, old_release)
+                actual_deps = (old_deps / 'node_modules').resolve().parent
+                if (actual_deps.parent == workspace / 'library/runtimes'
+                        and hash_file(actual_deps / 'package-lock.json') == files['package-lock.json']
+                        and (actual_deps / 'node_modules/@remotion/renderer/package.json').is_file()):
+                    runtime_manifest['dependenciesRuntimeReleaseId'] = actual_deps.name
+            except (OSError, ValueError, KeyError): pass
+        (release / 'runtime.json').write_text(json.dumps(runtime_manifest, indent=2) + '\n')
+    deps = dependency_root(workspace, release)
+    if not (deps / 'node_modules/@remotion/renderer/package.json').exists():
         run(['npm', 'ci', '--prefix', str(release)])
     models = [MODEL_CLONE] if args.voice_route == 'fixed-reference' else [MODEL_PRESET]
     if args.clone_model and MODEL_CLONE not in models:
@@ -400,6 +434,12 @@ def project_action(args):
     installed, release = installation(workspace)
     project = workspace / 'projects' / args.project_id
     data = json.loads((project / 'project.json').read_text())
+    if args.action == 'fork':
+        if not args.new_project_id: raise ValueError('fork requires --new-project-id')
+        verify_prebuilt(release)
+        run([env_python(workspace), release / 'scripts/fork_project.py', '--project', project,
+             '--new-project-id', args.new_project_id, '--runtime-id', installed['runtimeReleaseId']])
+        return
     if args.action == 'voice-set':
         if installed['runtimeReleaseId'] != runtime_identity()[0]:
             raise ValueError('run prepare with this package before attaching a fixed voice profile')
@@ -485,12 +525,12 @@ def main():
     probe = sub.add_parser('voice-probe'); probe.add_argument('--output', required=True)
     probe.add_argument('--speaker', required=True, help='explicit official preset voice for optional audition')
     action = sub.add_parser('project'); action.add_argument('project_id')
-    action.add_argument('action', choices=['voice-set', 'audio-inspect', 'audio-generate', 'build', 'render', 'finalize',
+    action.add_argument('action', choices=['fork', 'voice-set', 'audio-inspect', 'audio-generate', 'build', 'render', 'finalize',
         'inventory', 'preview', 'apply', 'restore', 'prune'])
     action.add_argument('value', nargs='?'); action.add_argument('--run-id')
     action.add_argument('--lesson'); action.add_argument('--frames'); action.add_argument('--export')
     action.add_argument('--build-run'); action.add_argument('--render-run'); action.add_argument('--version')
-    action.add_argument('--profile')
+    action.add_argument('--profile'); action.add_argument('--new-project-id')
     args = parser.parse_args()
     try:
         if args.command == 'doctor': doctor(args)

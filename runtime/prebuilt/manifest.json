@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "remotionVersion": "4.0.529",
+  "sourceFiles": {
+    "src/board-lesson.tsx": "1439d2d7e88a83d834ac301f6d954a88d2c07fea114903e6e1621f18c02b1a4e",
+    "src/index.tsx": "203e69338b9e21def817db719508aaa1effe3071e176c1e80c58fdb6a98f3650",
+    "src/ink-actions.d.mts": "7171a11394c10637936f96ccbc69bc560d4f42a5e6b6ae5ac5017dec09cbf9f8",
+    "src/ink-actions.mjs": "9c56b0ee897376b875a68244ef2bc586a39dea1b5f5548c55c046f326ee57a66",
+    "src/writing-lesson.tsx": "b26fc607d406507b41707014e829133077b7d397c7de071af872e2cdc92fc608",
+    "package.json": "c0f7e4929ece0724c84f217ebd8873f62627ca92376108323177728473a3ddf1",
+    "package-lock.json": "6730fb70f30d980185861ed881f07e79c7009f91f9f22efc67ffc96764fb04bc",
+    "tsconfig.json": "367436708de20e775af3a26f3ea67eebf593fbfbc4b0ff100449fcaf9fe86353"
+  },
+  "sourceDigest": "7b8eff92ce16c38f3abf42a9ad137e4a947a45bfc2ffff4884cdacd28ed6c36a",
+  "lockSha256": "6730fb70f30d980185861ed881f07e79c7009f91f9f22efc67ffc96764fb04bc",
+  "files": {
+    "bundle/129.bundle.js": "90e44b41130cf42c17ecf77f7edee509ac9cb9879ea9c8b65100055411af06c3",
+    "bundle/140.bundle.js": "58274b136ad297ab51247ae1248711900dcb753ce3d653783373d883f3215957",
+    "bundle/158.bundle.js": "a1648cc554ca563cc79d51231c12909ae9d635d7ac712a83de0f480110a30a59",
+    "bundle/175.bundle.js": "fc6ef9136f596a6e3611e30400a565a667e50c2ee172d59004b4bf96c75a716d",
+    "bundle/301.bundle.js": "13f50f729716e0287899e4e65c8090614d7e6077a7af816cfa995f40ee001fd7",
+    "bundle/321.bundle.js": "11daa985c8e38197dd9bfaab0a0aa2b62bf05c79dc430eab83b1af2e3f39c8a2",
+    "bundle/357.bundle.js": "8cea028b3580b23971f93db1b694ea66f4c75605b375befceee9e56fae057f9c",
+    "bundle/408.bundle.js": "0944f6af61d6d107fa1cfd24c4625ffa445b7d48c3aca13b62b7fac810a916cf",
+    "bundle/411.bundle.js": "b5190c6ff18646cdbbf6894cf013217f6f03013ca067db6e0677a75b5f658202",
+    "bundle/425.bundle.js": "e966f1b13befbc940af9d4f94b43c0af700e7c637a0cad4e247adcbfa2fc155b",
+    "bundle/504.bundle.js": "857cd03080ca01ff977e11b5fcde2878023a65acf99a5635bde95c87e43dbcc4",
+    "bundle/552.bundle.js": "bcf92c644700dd0bc4c425720258b1ce3ddf91fcbbba088744f49029dca74693",
+    "bundle/564.bundle.js": "c5a53b3d666f997d67f41a39bd8712b3e84831a3fd04d5c97ca7d22c89e6a22f",
+    "bundle/568.bundle.js": "e2647c3ce58232e9ae86409da0deed7bf5a1fe5b5adeb36a04331d64aff86e6f",
+    "bundle/722.bundle.js": "44514e4cb7a274b1c3701f1ceb0d46959c7b77d435ec0e09b767cf5bb5eeb1ed",
+    "bundle/77.bundle.js": "820b810a947ee96326232220b0984aea93e26837064d8ad1689468eaae8d4099",
+    "bundle/777.bundle.js": "31bd7a3f911e2cc4060cc16ed050421fd2aaed1c0071b1385567fe579ec26903",
+    "bundle/798.bundle.js": "bf327ffa975af11f2758ef30b688239cebb1592e45dade5a2dcaafaf5ffdc626",
+    "bundle/882.bundle.js": "28089b512dc9753f7b0e5952fbff9bd24e3809488d5e26b692beaa717e4e8999",
+    "bundle/942.bundle.js": "5a2c490623b46c6c485f1b8ff7b76df17592cdbe2be4bb2fd7118623fe972cb0",
+    "bundle/951.bundle.js": "0466fe59087ce48c58f515cb26557adf7afbb252a4b6feb5f76da1071f5dd2a1",
+    "bundle/959.bundle.js": "4300ac059519ce4d159eb3b43b7e359150b4b03e39a9cf85cf958ebb7d8d634d",
+    "bundle/976.bundle.js": "418aaac4ce93bf1be4dd2489018fec9b010ae4b0543e5a8fa4d6cd0175bf678b",
+    "bundle/bundle.js": "5944fa006d1a343eff1099703ad279b44c911302b2a7cb079274939db06022b3",
+    "bundle/favicon.ico": "4b00984723c2fed999967eebf9b59f88350f7ab38716f2faf3587829e0f9be77",
+    "bundle/index.html": "ba3c1645dcb38cd7712320dd4e2a5d84d7a399dc03864c977453b810528431ae",
+    "licenses/README.md": "abf61619de4741e528e24aa97efdb7b767614ad54806a2fe48bd211e555babd6",
+    "licenses/dependency-notices.txt": "914f1bc87545b8c6b6c86665c00265818288892449c485e750cc6e560709fcdb"
+  },
+  "bundleId": "grammar-bundle-0c95a60da4911d7c",
+  "rendererFileHashes": {
+    "dist/index.js": "5d8eb17f18b839c0136070ddaf3f50bf92071d4f5f8fad8cb49ef4d4aef06d23",
+    "dist/render-media.js": "25b369069613ab62f9d100f7d89cfceb8b8b3756e2aa91abb2486e1381e20b2a",
+    "dist/select-composition.js": "71cdc4ed1b686bb37b0fe47c7afb1f05a236941ca6b470419ca2791f659e984f",
+    "dist/prepare-server.js": "65cb30dc1083372a436a93c67de7d396ec6e74a49537fb9fe3f27a5103f3330d"
+  }
+}

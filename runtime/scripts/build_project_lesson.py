@@ -7,6 +7,7 @@ import soundfile as sf
 from scipy.signal import butter, sosfilt
 from storage import atomic,iso,now,sha,resolve_project_font
 from course_text import spoken_text
+from audio_identity import postprocess_key
 parser=argparse.ArgumentParser();parser.add_argument('--project',required=True);parser.add_argument('--run-id')
 args=parser.parse_args();PROJECT=Path(args.project).resolve();ROOT=PROJECT/'source'
 START_PERF=perf_counter()
@@ -23,6 +24,8 @@ for cue in source['cues']:
  voice=voices[cue['id']]
  if voice.get('text') != cue['text'] or voice.get('spokenText',voice.get('text')) != spoken_text(cue) or voice.get('lang') != cue['lang']:
   raise ValueError(f'{cue["id"]}: selected audio text/language differs; run audio-inspect and audio-generate')
+ if voice.get('postprocessKey', voice.get('cleanKey')) and voice.get('postprocessKey', voice.get('cleanKey')) != postprocess_key(voice['rawSha256'], cue):
+  raise ValueError(f'{cue["id"]}: selected audio processing differs; run audio-inspect and audio-generate')
  section=cue['section']
  if previous is not None:
   if section!=previous:

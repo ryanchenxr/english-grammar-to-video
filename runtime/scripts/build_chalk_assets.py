@@ -202,12 +202,17 @@ def main():
     started = time.perf_counter()
     parser = argparse.ArgumentParser()
     parser.add_argument('lesson')
+    parser.add_argument('--project', help='Validate the registered project font before generating glyphs')
     parser.add_argument('--manifest', help='Per-run output manifest; do not write installed source')
     parser.add_argument('--cache-dir', help='Workspace glyph cache directory')
     args = parser.parse_args()
     lesson_path = Path(args.lesson).resolve()
     lesson = json.loads(lesson_path.read_text())
     font_path = Path(lesson['boardFont']).expanduser().resolve()
+    if args.project:
+        from storage import resolve_project_font
+        project = Path(args.project).resolve()
+        font_path = resolve_project_font(project.parent.parent, project.name, lesson.get('boardFont'))
     if not font_path.is_file():
         raise SystemExit(f'User-supplied font not found: {font_path}')
     if lesson['format'] in ('writing-board-v4', 'writing-board-v5'):

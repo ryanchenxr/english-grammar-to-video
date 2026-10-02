@@ -1,7 +1,6 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Sequence, useCurrentFrame} from 'remotion';
 import {activeInkActions} from './ink-actions.mjs';
-import manifestJson from './chalk-assets.json';
 import {ChalkText, Pen, pointAlong, pointOnTrace, TracedPath, type InkLine} from './writing-lesson';
 
 type Color = 'ink' | 'blue' | 'orange';
@@ -9,15 +8,16 @@ type Write = {id: string; section: string; text: string; x: number; y: number; s
 type Mark = {id: string; section: string; cueId: string; kind: 'circle' | 'underline' | 'strike' | 'arrow'; at: number; duration: number; color: Color; targetId: string; target: string; occurrence: number; fromPoint?: [number, number]; toPoint?: [number, number]};
 type Sketch = {id: string; section: string; cueId: string; d: string; at: number; duration: number; color: Color; width: number};
 type Cue = {id: string; voiceCueId: string; section: string; start: number; end: number; text: string};
+type GlyphManifest = {source: string; sha256: string; entries: Record<string, InkLine>};
 type Track = {cueId: string; kind: 'zhNarration' | 'enExample'; src: string; start: number};
 type Shot = {id: string; section?: string; showSections?: string[]; at: number; duration: number; x: number; y: number; zoom: number};
 export type BoardLessonData = {
   format: 'writing-board-v5'; title: string; audience: string; scope: string; boardFont: string;
+  fontSha256: string; glyphManifest: GlyphManifest;
   duration: number; boardWidth: number; boardHeight: number; sections: {id: string; at: number}[];
   shots: Shot[]; writes: Write[]; marks: Mark[]; sketches: Sketch[]; cues: Cue[]; audio: Track[];
   sound?: {src: string; enabled: boolean; volume: number; origin: string};
 };
-const manifest = manifestJson as {source: string; entries: Record<string, InkLine>};
 const BG = '#FBF6EC', INK = '#2B241A', BLUE = '#1635D0', ORANGE = '#FF6B1A';
 const FPS = 30;
 const clamp = (n: number) => Math.max(0, Math.min(1, n));
@@ -62,7 +62,8 @@ const cameraAt = (shots: Shot[], time: number) => {
 };
 
 export const BoardLesson: React.FC<BoardLessonData> = (lesson) => {
-  if (manifest.source !== lesson.boardFont || lesson.writes.some((w) => manifest.entries[w.id]?.text !== w.text)) {
+  const manifest = lesson.glyphManifest;
+  if (!manifest || manifest.sha256 !== lesson.fontSha256 || manifest.source !== lesson.boardFont || lesson.writes.some((w) => manifest.entries[w.id]?.text !== w.text)) {
     throw new Error('Board font assets do not match the lesson');
   }
   const time = useCurrentFrame() / FPS;

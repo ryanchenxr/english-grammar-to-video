@@ -1,7 +1,6 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame} from 'remotion';
 import {svgPathProperties} from 'svg-path-properties';
-import chalkManifest from './chalk-assets.json';
 
 type Write = {text: string; at: number; duration: number};
 type Line = Write & {id: string};
@@ -10,7 +9,7 @@ type Correction = {line: string; target: string; removeSuffix: string; at: numbe
 type Cue = {start: number; end: number; text: string};
 type Track = {kind: 'zhNarration' | 'enExample'; src: string; start: number};
 export type WritingLessonData = {
-  format: 'writing-board-v3'; title: string; scope: string; duration: number; boardFont: string;
+  format: 'writing-board-v3'; title: string; scope: string; duration: number; boardFont: string; glyphManifest: Manifest;
   boardTitle: Write; lines: [Line, Line]; errorLabel: Write;
   marks: Mark[]; correction: Correction; fixedLabel: Write; rule: Write;
   cues: Cue[]; audio?: Track[];
@@ -19,7 +18,6 @@ type Segment = {d: string; length: number; brush: number};
 export type Glyph = {char: string; x: number; y: number; width: number; height: number; advance: number; src: string | null; segments: Segment[]; begin: number; end: number};
 export type InkLine = {text: string; chars: Glyph[]; total: number};
 type Manifest = {source: string; sha256: string; entries: Record<string, InkLine>};
-const chalk = chalkManifest as Manifest;
 const FPS = 30;
 const BG = '#FBF6EC';
 const INK = '#2B241A';
@@ -131,6 +129,7 @@ export const Pen: React.FC<{x: number; y: number; erasing?: boolean}> = ({x, y, 
 </g>;
 
 export const WritingLesson: React.FC<WritingLessonData> = (lesson) => {
+  const chalk = lesson.glyphManifest;
   if (chalk.source !== lesson.boardFont || chalk.entries.boardTitle.text !== lesson.boardTitle.text || chalk.entries.second.text !== lesson.lines[1].text || chalk.entries.rule.text !== lesson.rule.text) {
     throw new Error('Chalk assets do not match this lesson; render through scripts/render.mjs');
   }

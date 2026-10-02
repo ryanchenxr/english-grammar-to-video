@@ -62,3 +62,29 @@ python3 grammar_video.py --workspace /path/to/grammar-work project my-lesson fin
 ## 固定运行版本
 
 更新程序后 `prepare` 按内容身份建立新的 runtime，保留旧 runtime。历史项目仍使用其 `project.json` 固定版本；复验应建立独立测试项目，显式选择新 runtime 并复用已有音频，不原地修改 pinned 程序或偷偷迁移历史项目。
+
+## 预构建模板渲染
+
+`init → build → render → finalize` 的制作命令保持。维护者随版本提供预构建模板；目标机 render 只校验模板身份、准备当前课的字体字形与已登记录音，再用 Remotion 4.0.529 renderer API 直接渲染，不运行 webpack 或 bundler。字形清单作为逐课 props 输入，音轨和字形使用现有 data URI 传递；字体内容哈希、字形文本、录音资源状态/哈希和工作区路径均校验。模板缺失、损坏或源码/锁文件身份不符时停止，不能在目标机回退为源码打包。
+
+prepare 安装新的不可变 runtime；锁文件一致时复用该工作区已有的 Node 依赖，以 dependenciesRuntimeReleaseId 记录其相对版本引用，不复制每课依赖，也不更改旧 runtime。doctor 另检查 prebuiltTemplate。宿主 NODE_OPTIONS 与安全环境变量正常继承；只有 renderer 子进程的 TMPDIR/TMP/TEMP 限定到当次 run。run.json / worker.json / render.log 记录 bundleId、宿主观察、是否加载构建模块以及浏览器/渲染/编码阶段。unknown 不代表没有宿主注入。
+
+新安装或更新 Skill 后运行 prepare 获取当前版本，再复查 doctor。已有课程仍固定旧 runtime；需要采用新版时，明确使用 fork 建立独立项目，自动复用并重定位登记字体、参考和原录音，不覆盖旧课程，不重配音：
+
+```sh
+python3 grammar_video.py --workspace /path/to/grammar-work project existing-lesson fork --new-project-id independent-candidate
+python3 grammar_video.py --workspace /path/to/grammar-work project independent-candidate build --run-id build-001
+python3 grammar_video.py --workspace /path/to/grammar-work project independent-candidate render --run-id render-001 --lesson work/runs/build-001/lesson.json --export candidate
+```
+
+fork 需要已有课程源与对应有效录音；冲突、资源缺失或校验失败时报告原因，不猜路径或静默替换。它使用 prepare 当前安装的 runtime，历史项目不自动迁移。新课仍直接 init，无须使用作者课程。
+
+完整课程渲染可能超过宿主单次命令的等待时间。若工具返回进程或会话 ID，继续等待同一个进程并查看该 run 的 render.log、worker.json 和 run.json；不要启动第二次渲染，也不要仅凭命令等待超时判定失败或完成。只有 run.json 为 completed 且 MP4 存在才报告出片；结果不明确时先核对原进程与产物，实际失败再按 failedStage 定位。必要的宿主权限正常请求，保留安全注入。
+
+维护者改变模板源码或依赖锁文件后，在维护者构建环境重建模板；课程内容、字体字形或录音变化不重建模板。命令如下，已有产物应先由维护者保存到构建工作记录，固定的 library/runtimes 不能原地构建：
+
+```sh
+node runtime/scripts/build_template_bundle.mjs --work-dir /path/to/new-maintainer-build --dependencies-root /path/to/prepared-runtime
+```
+
+构建清单绑定模板源码摘要、锁文件、bundle 文件摘要和版本；随包保留第三方许可。此路径的宿主全课能力需分别实测，不由一秒探针推断完整课程或其他平台已通过。

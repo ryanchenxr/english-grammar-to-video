@@ -34,3 +34,13 @@ voice-generation.json 保留展示 text、实际 spokenText、语言与 inputKey
 writes、marks、sketches 的落笔活动区间统一为 `[at, at + duration)`，跨类型、区域和 section 也不得重叠。结束恰好接下一动作可以；已写完笔迹继续留在板面、同时旁白/字幕均不算冲突。v5 校验列出冲突类型、ID 和起止时间，不自动移动动作。用源 anchor/offset/duration 修正编排后重新 build 和校验。
 
 简图 SVG 可包含多次 M/m 与曲线、闭合路径；按原路径段顺序逐段显露，未开始的段不出现，已完成的段保留；笔尖使用同一段的实际长度位置。不能先贴完整图再假画，也不能等结束才整幅闪现。
+
+## 原始生成缓存与局部配音修复
+
+逐 cue 的 generationKey/generationIdentity 绑定实际朗读输入、语言、模型内容、声音/参考内容与模式、生成参数和生成版本；不含后处理。postprocessKey/postprocessIdentity 另绑定 rawSha256、处理版本和 pauseShorten。inputKey 在新记录中指向生成身份，cleanKey 保留为后处理键的兼容字段。旧组合键经验证后迁移，保留 legacyInputKey、原资源以及当次 run 的 input-voice-generation.json；只有 raw 哈希相同不能证明未重新合成。无法验证旧生成身份时不能宣称原录音命中。
+
+`audio-inspect` 的 missingCues 是需新生成的 cue；reprocessCues 是只需处理原录音的 cue。两者非空均须完成 audio-generate 后再 build。原始录音永不覆盖，新的处理结果按内容哈希保存；模型加载/推理调用计数和生成/重处理 cue 分别登记。后处理音长变化后正常 build 重新编译字幕、板书、标注和镜头，旧 until 边界不适用时应重新校核，不按字数比例挪动。
+
+可选 pauseShorten 为 `{start, end, targetSeconds}`，单位秒，坐标位于原录音按既有规则去除首尾低能量区、尚未归一化的时间轴。它只对明确指定的区间保留较短间隔；不是自动找词界。程序检查拟删除样本的短窗口最大 RMS 和峰值以防平均值掩盖局部声音，但弱辅音、气息或韵律仍可能受损，保护通过不代表自然、连续或无语音。
+
+异常韵律优先调整自然、等义讲稿并只重生成该 cue；只有试听/可靠定位支持适用时才使用局部处理。不要因标点有无自动判错，不全局删停顿、不变速、不更换已确认音色。交含前后语境的一份推荐候选，用户判断听感；不把这些参数选择推给用户，也不将测试/读法控制话术加入旁白。

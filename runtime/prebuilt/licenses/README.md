@@ -1,0 +1,1 @@
+Prebuilt JavaScript includes Remotion 4.0.529 (Remotion license), React (MIT), svg-path-properties (ISC) and their dependencies. Original terms apply; this artifact is not relicensed as MIT. Notices also include build dependencies.
